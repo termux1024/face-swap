@@ -1,0 +1,6 @@
+venv310/
+VideoSwapping/swapped_frames/
+VideoSwapping/swapped_frames2/
+VideoSwapping/video_frames/
+VideoSwapping/data_dst.mp4
+VideoSwapping/data_src.jpg
