@@ -1,11 +1,21 @@
 import cv2
 import os
 import shutil
+import time
 from local_swap import FaceSwapper
 
 def extract_frames(video_path, frames_dir):
     if not os.path.exists(frames_dir):
         os.makedirs(frames_dir)
+        last_idx = -1
+    else:
+        # Find the last extracted frame index
+        existing = [f for f in os.listdir(frames_dir) if f.startswith("frame_") and f.endswith(".jpg")]
+        if existing:
+            last_idx = max([int(f.split("_")[1].split(".")[0]) for f in existing])
+        else:
+            last_idx = -1
+
     cap = cv2.VideoCapture(video_path)
     frame_paths = []
     idx = 0
@@ -14,7 +24,8 @@ def extract_frames(video_path, frames_dir):
         if not ret:
             break
         frame_path = os.path.join(frames_dir, f"frame_{idx:05d}.jpg")
-        cv2.imwrite(frame_path, frame)
+        if idx > last_idx:
+            cv2.imwrite(frame_path, frame)
         frame_paths.append(frame_path)
         idx += 1
     cap.release()
@@ -44,8 +55,8 @@ def main():
     source_face_idx = 1
     dest_face_idx = 1
 
-    # Extract frames
-    print("Extracting frames from video...")
+    # Extract frames (resume if already present)
+    print("Extracting frames from video (resuming if needed)...")
     frame_paths = extract_frames(video_path, frames_dir)
 
     # Prepare output directory
@@ -57,7 +68,13 @@ def main():
 
     # Swap faces on each frame
     print("Swapping faces on frames...")
+    start_time = time.time()
     for idx, frame_path in enumerate(frame_paths):
+        out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
+        if os.path.exists(out_path):
+            # Skip already swapped frames
+            print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
+            continue
         try:
             swapped = swapper.swap_faces(
                 source_path=source_image_path,
@@ -65,13 +82,17 @@ def main():
                 target_path=frame_path,
                 target_face_idx=dest_face_idx
             )
-            out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
             cv2.imwrite(out_path, swapped)
         except Exception as e:
             print(f"\nFrame {idx}: {e}")
             # Optionally, copy the original frame if swap fails
-            cv2.imwrite(os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg"), cv2.imread(frame_path))
-        print(f"Swapping frame {idx+1}/{len(frame_paths)}", end='\r')
+            cv2.imwrite(out_path, cv2.imread(frame_path))
+        # Estimate time left
+        elapsed = time.time() - start_time
+        avg_time = elapsed / (idx + 1)
+        remaining = avg_time * (len(frame_paths) - (idx + 1))
+        mins, secs = divmod(int(remaining), 60)
+        print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\r')
     print()  # Move to the next line after the loop
 
     # Get FPS from original video
