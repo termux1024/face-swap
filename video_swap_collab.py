@@ -76,24 +76,12 @@ def main():
             print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
             continue
         try:
-            try:
-                swapped = swapper.swap_faces(
-                    source_path=source_image_path,
-                    source_face_idx=source_face_idx,
-                    target_path=frame_path,
-                    target_face_idx=dest_face_idx
-                )
-            except ValueError as ve:
-                if "Target image contains" in str(ve):
-                    print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.")
-                    swapped = swapper.swap_faces(
-                        source_path=source_image_path,
-                        source_face_idx=source_face_idx,
-                        target_path=frame_path,
-                        target_face_idx=1
-                    )
-                else:
-                    raise ve
+            swapped = swapper.swap_faces(
+                source_path=source_image_path,
+                source_face_idx=source_face_idx,
+                target_path=frame_path,
+                target_face_idx=dest_face_idx
+            )
             cv2.imwrite(out_path, swapped)
         except Exception as e:
             print(f"\nFrame {idx}: {e}")
@@ -104,7 +92,7 @@ def main():
         avg_time = elapsed / (idx + 1)
         remaining = avg_time * (len(frame_paths) - (idx + 1))
         mins, secs = divmod(int(remaining), 60)
-        print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\r')
+        print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\n')
     print()  # Move to the next line after the loop
 
     # Get FPS from original video

@@ -46,12 +46,24 @@ def main():
     swapper = FaceSwapper()
 
     try:
-        result = swapper.swap_faces(
-            source_path=source_path,
-            source_face_idx=1,
-            target_path=target_path,
-            target_face_idx=1
-        )
+        try:
+            result = swapper.swap_faces(
+                source_path=source_path,
+                source_face_idx=1,
+                target_path=target_path,
+                target_face_idx=2  # Example: try with 2 first
+            )
+        except ValueError as ve:
+            if "Target image contains" in str(ve):
+                print("Target face idx 2 not found, trying with idx 1.")
+                result = swapper.swap_faces(
+                    source_path=source_path,
+                    source_face_idx=1,
+                    target_path=target_path,
+                    target_face_idx=1
+                )
+            else:
+                raise ve
         output_path = os.path.join(output_dir, "swapped_face.jpg")
         cv2.imwrite(output_path, result)
         print(f"Face swap completed successfully. Result saved to: {output_path}")

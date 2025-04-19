@@ -35,7 +35,7 @@ def main():
     output_folder = os.path.join(base_folder, "output")
     source_img_name = "data_src.jpg"  # Change as needed
     source_face_idx = 1  # Change as needed
-    target_face_idx = 1  # Change as needed
+    target_face_idx = 2  # Change as needed
 
     if not os.path.exists(output_folder):
         os.makedirs(output_folder)
@@ -56,12 +56,26 @@ def main():
                 print(f"Could not read target image: {target_img_path}")
                 continue
             try:
-                result = swapper.swap_faces(
-                    source_img=source_img,
-                    source_face_idx=source_face_idx,
-                    target_img=target_img,
-                    target_face_idx=target_face_idx
-                )
+                # Try swapping with the requested target_face_idx
+                try:
+                    result = swapper.swap_faces(
+                        source_img=source_img,
+                        source_face_idx=source_face_idx,
+                        target_img=target_img,
+                        target_face_idx=target_face_idx
+                    )
+                except ValueError as ve:
+                    # If the error is due to target_face_idx, try with 1
+                    if "Target image contains" in str(ve):
+                        print(f"Target face idx {target_face_idx} not found in {filename}, trying with idx 1.")
+                        result = swapper.swap_faces(
+                            source_img=source_img,
+                            source_face_idx=source_face_idx,
+                            target_img=target_img,
+                            target_face_idx=1
+                        )
+                    else:
+                        raise ve
                 output_path = os.path.join(output_folder, f"swapped_{filename}")
                 cv2.imwrite(output_path, result)
                 print(f"Swapped face saved to: {output_path}")
