@@ -1,3 +1,8 @@
 venv310/
-VideoSwapping/*
+VideoSwapping/swapped_frames/*
+VideoSwapping/video_frames/*
+VideoSwapping/data_dst.mp4
+VideoSwapping/data_src.jpg
 SinglePhoto/*
+MultiplePics/dst/*
+MultiplePics/output/*
