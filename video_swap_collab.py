@@ -55,67 +55,97 @@ def main():
     source_face_idx = 1
     dest_face_idx = 1
 
-    # Extract frames (resume if already present)
-    print("Extracting frames from video (resuming if needed)...")
-    frame_paths = extract_frames(video_path, frames_dir)
+    print("Choose an option:")
+    print("1. Extract frames only")
+    print("2. Face swap only (requires extracted frames)")
+    print("3. Both extract frames and face swap")
+    choice = input("Enter 1, 2, or 3: ").strip()
 
-    # Prepare output directory
-    if not os.path.exists(swapped_dir):
-        os.makedirs(swapped_dir)
+    frame_paths = []
+    if choice == "1" or choice == "3":
+        print("Extracting frames from video (resuming if needed)...")
+        frame_paths = extract_frames(video_path, frames_dir)
+        print(f"Extracted {len(frame_paths)} frames to {frames_dir}.")
+        if choice == "1":
+            return
 
-    # Initialize face swapper
-    swapper = FaceSwapper()
+    if choice == "2":
+        # If only face swap, ensure frames are present
+        if not os.path.exists(frames_dir):
+            print("Frames directory does not exist. Please extract frames first.")
+            return
+        frame_paths = sorted([os.path.join(frames_dir, f) for f in os.listdir(frames_dir) if f.endswith('.jpg')])
 
-    # Swap faces on each frame
-    print("Swapping faces on frames...")
-    start_time = time.time()
-    for idx, frame_path in enumerate(frame_paths):
-        out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
-        if os.path.exists(out_path):
-            # Skip already swapped frames
-            print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
-            continue
-        try:
-            swapped = swapper.swap_faces(
-                source_path=source_image_path,
-                source_face_idx=source_face_idx,
-                target_path=frame_path,
-                target_face_idx=dest_face_idx
-            )
-            cv2.imwrite(out_path, swapped)
-        except Exception as e:
-            print(f"\nFrame {idx}: {e}")
-            # Optionally, copy the original frame if swap fails
-            cv2.imwrite(out_path, cv2.imread(frame_path))
-        # Estimate time left
-        elapsed = time.time() - start_time
-        avg_time = elapsed / (idx + 1)
-        remaining = avg_time * (len(frame_paths) - (idx + 1))
-        mins, secs = divmod(int(remaining), 60)
-        print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\n')
-    print()  # Move to the next line after the loop
+    if choice == "2" or choice == "3":
+        # Prepare output directory
+        if not os.path.exists(swapped_dir):
+            os.makedirs(swapped_dir)
 
-    # Get FPS from original video
-    cap = cv2.VideoCapture(video_path)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    cap.release()
+        # Initialize face swapper
+        swapper = FaceSwapper()
 
-    # Combine swapped frames into video
-    print("Combining swapped frames into video...")
-    frames_to_video(swapped_dir, output_video_path, fps)
-    print(f"Done! Output video saved as {output_video_path}")
+        # Swap faces on each frame
+        print("Swapping faces on frames...")
+        start_time = time.time()
+        for idx, frame_path in enumerate(frame_paths):
+            out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
+            if os.path.exists(out_path):
+                # Skip already swapped frames
+                print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
+                continue
+            try:
+                try:
+                    swapped = swapper.swap_faces(
+                        source_path=source_image_path,
+                        source_face_idx=source_face_idx,
+                        target_path=frame_path,
+                        target_face_idx=dest_face_idx
+                    )
+                except ValueError as ve:
+                    if "Target image contains" in str(ve):
+                        print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.")
+                        swapped = swapper.swap_faces(
+                            source_path=source_image_path,
+                            source_face_idx=source_face_idx,
+                            target_path=frame_path,
+                            target_face_idx=1
+                        )
+                    else:
+                        raise ve
+                cv2.imwrite(out_path, swapped)
+            except Exception as e:
+                print(f"\nFrame {idx}: {e}")
+                # Optionally, copy the original frame if swap fails
+                cv2.imwrite(out_path, cv2.imread(frame_path))
+            # Estimate time left
+            elapsed = time.time() - start_time
+            avg_time = elapsed / (idx + 1)
+            remaining = avg_time * (len(frame_paths) - (idx + 1))
+            mins, secs = divmod(int(remaining), 60)
+            print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\n')
+        print()  # Move to the next line after the loop
 
-    # Ask user if they want to keep the extracted frames and swapped images
-    answer = input("Do you want to keep the extracted frames and swapped images? (y/n): ").strip().lower()
-    if answer == 'n':
-        try:
-            shutil.rmtree(frames_dir)
-            shutil.rmtree(swapped_dir)
-            print("Temporary folders deleted.")
-        except Exception as e:
-            print(f"Error deleting folders: {e}")
-    else:
-        print("Temporary folders kept.")
+        # Get FPS from original video
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        cap.release()
+
+        # Combine swapped frames into video
+        print("Combining swapped frames into video...")
+        frames_to_video(swapped_dir, output_video_path, fps)
+        print(f"Done! Output video saved as {output_video_path}")
+
+        # Ask user if they want to keep the extracted frames and swapped images
+        answer = input("Do you want to keep the extracted frames and swapped images? (y/n): ").strip().lower()
+        if answer == 'n':
+            try:
+                shutil.rmtree(frames_dir)
+                shutil.rmtree(swapped_dir)
+                print("Temporary folders deleted.")
+            except Exception as e:
+                print(f"Error deleting folders: {e}")
+        else:
+            print("Temporary folders kept.")
 
 if __name__ == "__main__":
     main()
