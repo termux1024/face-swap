@@ -53,7 +53,18 @@ def main():
     swapped_dir = os.path.join("VideoSwapping", "swapped_frames")
     output_video_path = os.path.join("VideoSwapping", "output_swapped_video.mp4")
     source_face_idx = 1
-    dest_face_idx = 1
+
+    # Ask user for target_face_idx
+    while True:
+        try:
+            user_input = input("Enter target_face_idx (default is 1): ").strip()
+            if user_input == "":
+                dest_face_idx = 1
+                break
+            dest_face_idx = int(user_input)
+            break
+        except ValueError:
+            print("Invalid input. Please enter an integer value.")
 
     print("Choose an option:")
     print("1. Extract frames only")
@@ -103,7 +114,7 @@ def main():
                     )
                 except ValueError as ve:
                     if "Target image contains" in str(ve):
-                        print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.")
+                        print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.",end='\r')
                         swapped = swapper.swap_faces(
                             source_path=source_image_path,
                             source_face_idx=source_face_idx,

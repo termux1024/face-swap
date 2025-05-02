@@ -46,16 +46,27 @@ def main():
     swapper = FaceSwapper()
 
     try:
+        # Ask user for target_face_idx, default to 1 if no input or invalid input
+        try:
+            user_input = input("Enter the target face index (starting from 1, default is 1): ")
+            target_face_idx = int(user_input) if user_input.strip() else 1
+            if target_face_idx < 1:
+                print("Invalid index. Using default value 1.")
+                target_face_idx = 1
+        except ValueError:
+            print("Invalid input. Using default value 1.")
+            target_face_idx = 1
+
         try:
             result = swapper.swap_faces(
                 source_path=source_path,
                 source_face_idx=1,
                 target_path=target_path,
-                target_face_idx=2  # Example: try with 2 first
+                target_face_idx=target_face_idx
             )
         except ValueError as ve:
             if "Target image contains" in str(ve):
-                print("Target face idx 2 not found, trying with idx 1.")
+                print(f"Target face idx {target_face_idx} not found, trying with idx 1.")
                 result = swapper.swap_faces(
                     source_path=source_path,
                     source_face_idx=1,

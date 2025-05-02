@@ -53,7 +53,18 @@ def main():
     swapped_dir = os.path.join("VideoSwapping", "swapped_frames")
     output_video_path = os.path.join("VideoSwapping", "output_swapped_video.mp4")
     source_face_idx = 1
-    dest_face_idx = 1
+
+    # Ask user for target_face_idx
+    while True:
+        try:
+            user_input = input("Enter target_face_idx (default is 1): ").strip()
+            if user_input == "":
+                dest_face_idx = 1
+                break
+            dest_face_idx = int(user_input)
+            break
+        except ValueError:
+            print("Invalid input. Please enter an integer value.")
 
     print("Choose an option:")
     print("1. Extract frames only")
@@ -91,7 +102,7 @@ def main():
             out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
             if os.path.exists(out_path):
                 # Skip already swapped frames
-                print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
+                print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\n')
                 continue
             try:
                 try:
@@ -103,7 +114,7 @@ def main():
                     )
                 except ValueError as ve:
                     if "Target image contains" in str(ve):
-                        print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.")
+                        print(f"\nFrame {idx}: Target face idx {dest_face_idx} not found, trying with idx 1.",end='\r')
                         swapped = swapper.swap_faces(
                             source_path=source_image_path,
                             source_face_idx=source_face_idx,
@@ -122,7 +133,7 @@ def main():
             avg_time = elapsed / (idx + 1)
             remaining = avg_time * (len(frame_paths) - (idx + 1))
             mins, secs = divmod(int(remaining), 60)
-            print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\n')
+            print(f"Swapping frame {idx+1}/{len(frame_paths)} | Est. time left: {mins:02d}:{secs:02d}", end='\r')
         print()  # Move to the next line after the loop
 
         # Get FPS from original video
