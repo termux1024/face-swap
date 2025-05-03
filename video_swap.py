@@ -99,7 +99,13 @@ def main():
         print("Swapping faces on frames...")
         start_time = time.time()
         for idx, frame_path in enumerate(frame_paths):
-            out_path = os.path.join(swapped_dir, f"swapped_{idx:05d}.jpg")
+            frame_name = os.path.basename(frame_path)
+            # Replace 'frame_' with 'swapped_' in the filename
+            if frame_name.startswith("frame_"):
+                swapped_name = "swapped_" + frame_name[len("frame_"):]
+            else:
+                swapped_name = "swapped_" + frame_name
+            out_path = os.path.join(swapped_dir, swapped_name)
             if os.path.exists(out_path):
                 # Skip already swapped frames
                 print(f"Frame {idx+1}/{len(frame_paths)} already swapped, skipping...", end='\r')
