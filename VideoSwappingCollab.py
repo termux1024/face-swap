@@ -2,7 +2,7 @@ import cv2
 import os
 import shutil
 import time
-from local_swap import FaceSwapper
+from SinglePhoto import FaceSwapper
 
 def extract_frames(video_path, frames_dir):
     if not os.path.exists(frames_dir):
